@@ -130,7 +130,7 @@ _deps = [
     "regex!=2019.12.17",
     "requests",
     "tensorboard",
-    "torch>=1.4",
+    "torch==2.2.1",
     "torchvision",
     "transformers>=4.41.2",
     "urllib3<=2.0.0",
