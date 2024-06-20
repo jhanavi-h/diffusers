@@ -98,6 +98,9 @@ _deps = [
     "accelerate>=0.29.3",
     "compel==0.1.8",
     "datasets",
+    "wandb",
+    "bitsandbytes",
+    "xformers",
     "filelock",
     "flax>=0.4.1",
     "hf-doc-builder>=0.3.0",
@@ -128,10 +131,10 @@ _deps = [
     "scipy",
     "onnx",
     "regex!=2019.12.17",
-    "requests",
+    "requests==2.31.0",
     "tensorboard",
     "torch==2.2.1",
-    "torchvision",
+    "torchvision==0.18",
     "transformers>=4.41.2",
     "urllib3<=2.0.0",
     "black",
@@ -208,7 +211,7 @@ class DepsTableUpdateCommand(Command):
 extras = {}
 extras["quality"] = deps_list("urllib3", "isort", "ruff", "hf-doc-builder")
 extras["docs"] = deps_list("hf-doc-builder")
-extras["training"] = deps_list("accelerate", "datasets", "protobuf", "tensorboard", "Jinja2", "peft")
+extras["training"] = deps_list("accelerate", "wandb", "datasets", "protobuf", "xformers", "tensorboard", "Jinja2", "peft", "bitsandbytes" )
 extras["test"] = deps_list(
     "compel",
     "GitPython",

@@ -1,6 +1,6 @@
 accelerate>=0.16.0
-torchvision
-datasets
+torchvision==0.18
+datasets==2.16.0
 wandb
 bitsandbytes
 xformers
