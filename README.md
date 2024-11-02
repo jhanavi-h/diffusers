@@ -101,28 +101,25 @@ train_student_model(args)
 You can also dig into the models and schedulers toolbox to build your own diffusion system:
 
 ```python
-from diffusers import DDPMScheduler, UNet2DModel
-from PIL import Image
-import torch
 
-scheduler = DDPMScheduler.from_pretrained("google/ddpm-cat-256")
-model = UNet2DModel.from_pretrained("google/ddpm-cat-256").to("cuda")
-scheduler.set_timesteps(50)
+%cd /mydrive/satellite_images/diffusers/
 
-sample_size = model.config.sample_size
-noise = torch.randn((1, 3, sample_size, sample_size), device="cuda")
-input = noise
+# import consistency pipeline
+from pipeline_ldm_consistency_sr import LDMConsistencySRPipeline
+pipeline = LDMConsistencySRPipeline()
 
-for t in scheduler.timesteps:
-    with torch.no_grad():
-        noisy_residual = model(input, t).sample
-        prev_noisy_sample = scheduler.step(noisy_residual, t, input).prev_sample
-        input = prev_noisy_sample
+#Need to set the path for consistency model trained using distillation.
+#I used GoogleDrive to save the models
+#UNET_PATH = "/content/gdrive/MyDrive/satellite_images/diffusers/models/con_unet_model_080824.pt"
+#VQVAE_PATH = "/content/gdrive/MyDrive/satellite_images/diffusers/models/con_vqvae_model_080824.pt"
 
-image = (input / 2 + 0.5).clamp(0, 1)
-image = image.cpu().permute(0, 2, 3, 1).numpy()[0]
-image = Image.fromarray((image * 255).round().astype("uint8"))
-image
+# Use CUDA/GPU if available
+device = 'cuda' if torch.cuda.is_available() else 'cpu'
+pipeline.to(device)
+pipeline.vqvae.load_state_dict(torch.load(VQVAE_PATH))
+pipeline.unet.load_state_dict(torch.load(UNET_PATH))
+pipeline.vqvae.to(device)
+pipeline.unet.to(device)
 ```
 
 Check out the [Quickstart](https://huggingface.co/docs/diffusers/quicktour) to launch your diffusion journey today!
