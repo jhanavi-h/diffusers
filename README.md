@@ -121,7 +121,74 @@ pipeline.unet.load_state_dict(torch.load(UNET_PATH))
 pipeline.vqvae.to(device)
 pipeline.unet.to(device)
 ```
+Create Custom Dataloader for satellite images
 
+```python
+import torch, os
+from PIL import Image
+from torch.utils.data import Dataset, DataLoader
+import torchvision.transforms.functional as TF
+import torch.nn.functional as F
+from torchvision import transforms
+
+# Set the path to satellite images (test set). I have stored my images on Google drive
+IMAGE_PATH = "/content/gdrive/MyDrive/satellite_images/dataset/test/images/"
+
+class ImageDataset(Dataset):
+    def __init__(self, root_dir, num_images=10000):
+        self.root_dir = root_dir
+        #self.transform = transform
+        self.images = []
+
+        for count, image_path in enumerate(os.listdir(root_dir)):
+            #image = Image.open(os.path.join(root_dir, image_path))
+            self.images.append(image_path)
+            if (count >= (num_images-1)):
+               break
+
+    # Image transforms for dataset
+    def transform(self, image, resolution=512):
+
+       # crop if size greater than 512 x 512
+       def crop_normalize(image):
+       # get crop coordinates and crop image
+         (w,h) = image.size
+         resolution = 512
+
+         if (w < resolution or h < resolution):
+           if (w<=h):
+             image = TF.crop(image,0,0,w,w)
+           else:
+             image = TF.crop(image,0,0,h,h)
+
+           image = TF.resize(image, (resolution, resolution))
+         else:
+           c_top, c_left, _, _ = transforms.RandomCrop.get_params(image, output_size=(resolution, resolution))
+           image = TF.crop(image, c_top, c_left, resolution, resolution)
+
+         image = TF.to_tensor(image)
+         image = TF.normalize(image, [0.5], [0.5])
+         return image
+
+       image = crop_normalize(image)
+       lr_image = TF.resize(image, (resolution//4, resolution//4))
+       return image, lr_image
+
+    def __len__(self):
+        return len(self.images)
+
+    def __getitem__(self, index):
+        image_path = self.images[index]
+        image = Image.open(os.path.join(self.root_dir, image_path))
+        #image.filter(ImageFilter.GaussianBlur(radius=2))
+        image, lr_image = self.transform(image)
+        return ({"hr_images":image, "lr_images":lr_image})
+
+# Create a dataloader
+#train_dataloader = DataLoader(ImageDataset(root_dir=IMAGE_PATH), batch_size=8, shuffle=True)
+dataset = ImageDataset(root_dir=IMAGE_PATH, num_images=2000)
+eval_dataloader = DataLoader(dataset, batch_size=8, shuffle=False)
+```
 Check out the [Quickstart](https://huggingface.co/docs/diffusers/quicktour) to launch your diffusion journey today!
 
 ## How to navigate the documentation
