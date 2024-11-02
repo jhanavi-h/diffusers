@@ -77,15 +77,25 @@ Please refer to the [How to use Stable Diffusion in Apple Silicon](https://huggi
 
 ## Quickstart
 
-Generating outputs is super easy with 🤗 Diffusers. To generate an image from text, use the `from_pretrained` method to load any pretrained diffusion model (browse the [Hub](https://huggingface.co/models?library=diffusers&sort=downloads) for 25.000+ checkpoints):
+Use Teacher Student Distillation to train Consistency Model
 
 ```python
-from diffusers import DiffusionPipeline
+import sys, importlib
 import torch
+sys.path.append('/mydrive/satellite_images/diffusers/')
+utils = importlib.import_module('utils')
+from utils import parse_args, train_student
 
-pipeline = DiffusionPipeline.from_pretrained("runwayml/stable-diffusion-v1-5", torch_dtype=torch.float16)
-pipeline.to("cuda")
-pipeline("An image of a squirrel in Picasso style").images[0]
+args = parse_args()
+args.push_to_hub = False
+args.gradient_checkpointing = False
+args.tracker_project_name = "super_resolution_distillation"
+
+# hyper parameter for distillation
+args.loss_type = "l2"
+args.num_ddim_timesteps = 40
+timestep_scaling_factor = 20
+train_student_model(args)
 ```
 
 You can also dig into the models and schedulers toolbox to build your own diffusion system:
