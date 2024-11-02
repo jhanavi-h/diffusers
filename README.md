@@ -257,7 +257,8 @@ for step, batch in enumerate(eval_dataloader):
 Check out the [Quickstart](https://huggingface.co/docs/diffusers/quicktour) to launch your diffusion journey today!
 
 
-## Popular Tasks & Pipelines
+## Sample Images 
+![Figure 1-1](https://github.com/jhanavi-h/diffusers/blob/dev_sr_branch/image_2.png "Figure 1-1")
 
 
 ## Popular libraries using 🧨 Diffusers
