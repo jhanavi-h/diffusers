@@ -258,8 +258,13 @@ Check out the [Quickstart](https://huggingface.co/docs/diffusers/quicktour) to l
 
 
 ## Sample Images 
-![Figure 1-1](https://github.com/jhanavi-h/diffusers/blob/dev_sr_branch/image_2.png "Figure 1-1")
+![Figure 1](https://github.com/jhanavi-h/diffusers/blob/dev_sr_branch/image1.png "Figure 1")
 
+![Figure 2](https://github.com/jhanavi-h/diffusers/blob/dev_sr_branch/image_2.png "Figure 2")
+![Figure 3](https://github.com/jhanavi-h/diffusers/blob/dev_sr_branch/image_3.png "Figure 3")
+![Figure 4](https://github.com/jhanavi-h/diffusers/blob/dev_sr_branch/image_4.png "Figure 4")
+![Figure 5](https://github.com/jhanavi-h/diffusers/blob/dev_sr_branch/image_5.png "Figure 5")
+![Figure 6](https://github.com/jhanavi-h/diffusers/blob/dev_sr_branch/image_6.png "Figure 6")
 
 ## Popular libraries using 🧨 Diffusers
 
