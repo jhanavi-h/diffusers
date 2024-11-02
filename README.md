@@ -71,9 +71,16 @@ With `pip` (official package):
 pip install --upgrade diffusers[flax]
 ```
 
-### Apple Silicon (M1/M2) support
+Install tools to compute FID score
+```python
+import torch
+!pip install torch-fidelity
+!pip install torchmetrics
+from torchmetrics.image.fid import FrechetInceptionDistance
+_ = torch.manual_seed(123)
+```
 
-Please refer to the [How to use Stable Diffusion in Apple Silicon](https://huggingface.co/docs/diffusers/optimization/mps) guide.
+fid = FrechetInceptionDistance(feature=64)
 
 ## Quickstart
 
@@ -110,8 +117,8 @@ pipeline = LDMConsistencySRPipeline()
 
 #Need to set the path for consistency model trained using distillation.
 #I used GoogleDrive to save the models
-#UNET_PATH = "/content/gdrive/MyDrive/satellite_images/diffusers/models/con_unet_model_080824.pt"
-#VQVAE_PATH = "/content/gdrive/MyDrive/satellite_images/diffusers/models/con_vqvae_model_080824.pt"
+UNET_PATH = "/content/gdrive/MyDrive/satellite_images/diffusers/models/con_unet_model_080824.pt"
+VQVAE_PATH = "/content/gdrive/MyDrive/satellite_images/diffusers/models/con_vqvae_model_080824.pt"
 
 # Use CUDA/GPU if available
 device = 'cuda' if torch.cuda.is_available() else 'cpu'
@@ -185,10 +192,68 @@ class ImageDataset(Dataset):
         return ({"hr_images":image, "lr_images":lr_image})
 
 # Create a dataloader
-#train_dataloader = DataLoader(ImageDataset(root_dir=IMAGE_PATH), batch_size=8, shuffle=True)
 dataset = ImageDataset(root_dir=IMAGE_PATH, num_images=2000)
 eval_dataloader = DataLoader(dataset, batch_size=8, shuffle=False)
 ```
+
+Run Inference and compute FID, MSE
+
+```python
+# Inference with 4 steps
+# DDPM would need 100 steps
+import numpy as np
+import torch.nn as nn
+import torchvision.transforms as T
+from torchvision.transforms import InterpolationMode
+# Create a resize transform
+resize_transform = T.Resize((512, 512),interpolation=InterpolationMode.NEAREST)
+
+fid_sr = FrechetInceptionDistance(feature=64)
+fid_lr = FrechetInceptionDistance(feature=64)
+
+num_inference_steps = 4
+sr_mse_values = []
+lr_mse_values = []
+
+def update_FID(fid, real_image, gen_image):
+  real_img = ((real_image/2.0 + 0.5)*255).to(torch.uint8)
+  gen_img = ((gen_image/2.0 + 0.5)*255).to(torch.uint8)
+  fid.update(real_img, real=True)
+  fid.update(gen_img, real=False)
+  return
+
+def compute_MSE(org_image, decode_image):
+    shape = org_image.size()
+
+    # Calculate MSE loss
+    loss = nn.MSELoss(reduction='none')
+    loss_result = torch.sum(loss(org_image,decode_image))
+    return(loss_result/(shape[0]*shape[1]*shape[2]*shape[3]))
+
+for step, batch in enumerate(eval_dataloader):
+    # 1. Load and process the image and text conditioning
+    hr_images = batch["hr_images"]
+    lr_images = batch["lr_images"]
+    sr_images = []
+    for image_index in range(lr_images.shape[0]):
+       (sr_image, dummy) = pipeline(lr_images[image_index:image_index+1],
+                        num_inference_steps=num_inference_steps,
+                        return_intermediate_images = False)
+       sr_images.append(sr_image[0])
+
+    sr_images = torch.stack(sr_images).to('cpu')
+    lr_images = resize_transform(lr_images)
+    #hr_images = hr_images.permute(0, 2, 3, 1)
+    lr_images = resize_transform(lr_images)
+    update_FID(fid_sr, hr_images, sr_images)
+    update_FID(fid_lr, hr_images, lr_images)
+
+    sr_mse_values.append(compute_MSE(hr_images.permute(0, 2, 3, 1),
+                                    sr_images.permute(0, 2, 3, 1)))
+    lr_mse_values.append(compute_MSE(hr_images.permute(0, 2, 3, 1),
+                                     lr_images.permute(0, 2, 3, 1)))
+```
+
 Check out the [Quickstart](https://huggingface.co/docs/diffusers/quicktour) to launch your diffusion journey today!
 
 ## How to navigate the documentation
